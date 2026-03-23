@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven'
+    }
+
     environment {
         DOCKER_IMAGE = 'jesperho/shopping-cart'
         DOCKER_TAG   = "${env.BUILD_NUMBER}"

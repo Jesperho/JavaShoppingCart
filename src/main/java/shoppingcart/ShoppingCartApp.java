@@ -10,12 +10,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.Map;
 
 public class ShoppingCartApp extends Application {
 
-    private ResourceBundle bundle;
+    private final LocalizationService localizationService = new LocalizationService();
+    private final CartService cartService = new CartService();
+    private Map<String, String> strings;
+    private String currentLanguage = "en_US";
+
     private ShoppingCart cart = new ShoppingCart();
 
     private Label numItemsLabel;
@@ -34,7 +37,7 @@ public class ShoppingCartApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        bundle = ResourceBundle.getBundle("MessagesBundle", new Locale("en", "US"), new UTF8Control());
+        strings = localizationService.loadStrings("en_US");
 
         root = new VBox(10);
         root.setPadding(new Insets(15));
@@ -47,10 +50,10 @@ public class ShoppingCartApp extends Application {
         langBox.setOnAction(e -> changeLanguage(langBox.getValue()));
 
         // Number of items
-        numItemsLabel = new Label(bundle.getString("prompt.num.items"));
+        numItemsLabel = new Label(strings.get("prompt.num.items"));
         numItemsField = new TextField();
         numItemsField.setPrefWidth(60);
-        setItemsButton = new Button(bundle.getString("button.set.items"));
+        setItemsButton = new Button(strings.get("button.set.items"));
         setItemsButton.setOnAction(e -> createItemFields());
         HBox numRow = new HBox(10, numItemsLabel, numItemsField, setItemsButton);
         numRow.setAlignment(Pos.CENTER);
@@ -60,7 +63,7 @@ public class ShoppingCartApp extends Application {
         itemsBox.setAlignment(Pos.CENTER);
 
         // Calculate
-        calculateButton = new Button(bundle.getString("button.calculate"));
+        calculateButton = new Button(strings.get("button.calculate"));
         calculateButton.setOnAction(e -> calculate());
         calculateButton.setVisible(false);
 
@@ -77,27 +80,28 @@ public class ShoppingCartApp extends Application {
     }
 
     private void changeLanguage(String lang) {
-        Locale locale = switch (lang) {
-            case "Finnish" -> new Locale("fi", "FI");
-            case "Swedish" -> new Locale("sv", "SE");
-            case "Japanese" -> new Locale("ja", "JP");
-            case "Arabic" -> new Locale("ar", "AR");
-            default -> new Locale("en", "US");
+        currentLanguage = switch (lang) {
+            case "Finnish" -> "fi_FI";
+            case "Swedish" -> "sv_SE";
+            case "Japanese" -> "ja_JP";
+            case "Arabic" -> "ar_AR";
+            default -> "en_US";
         };
-        bundle = ResourceBundle.getBundle("MessagesBundle", locale, new UTF8Control());
+
+        strings = localizationService.loadStrings(currentLanguage);
 
         root.setNodeOrientation("Arabic".equals(lang)
                 ? NodeOrientation.RIGHT_TO_LEFT
                 : NodeOrientation.LEFT_TO_RIGHT);
 
-        numItemsLabel.setText(bundle.getString("prompt.num.items"));
-        setItemsButton.setText(bundle.getString("button.set.items"));
-        calculateButton.setText(bundle.getString("button.calculate"));
+        numItemsLabel.setText(strings.get("prompt.num.items"));
+        setItemsButton.setText(strings.get("button.set.items"));
+        calculateButton.setText(strings.get("button.calculate"));
 
         if (priceLabels != null) {
             for (int i = 0; i < priceLabels.length; i++) {
-                priceLabels[i].setText(bundle.getString("prompt.item.price") + " " + (i + 1) + ":");
-                quantityLabels[i].setText(bundle.getString("prompt.item.quantity") + " " + (i + 1) + ":");
+                priceLabels[i].setText(strings.get("prompt.item.price") + " " + (i + 1) + ":");
+                quantityLabels[i].setText(strings.get("prompt.item.quantity") + " " + (i + 1) + ":");
             }
         }
         resultsBox.getChildren().clear();
@@ -124,11 +128,11 @@ public class ShoppingCartApp extends Application {
         quantityLabels = new Label[n];
 
         for (int i = 0; i < n; i++) {
-            priceLabels[i] = new Label(bundle.getString("prompt.item.price") + " " + (i + 1) + ":");
+            priceLabels[i] = new Label(strings.get("prompt.item.price") + " " + (i + 1) + ":");
             priceFields[i] = new TextField();
             priceFields[i].setPrefWidth(80);
 
-            quantityLabels[i] = new Label(bundle.getString("prompt.item.quantity") + " " + (i + 1) + ":");
+            quantityLabels[i] = new Label(strings.get("prompt.item.quantity") + " " + (i + 1) + ":");
             quantityFields[i] = new TextField();
             quantityFields[i].setPrefWidth(80);
 
@@ -160,7 +164,10 @@ public class ShoppingCartApp extends Application {
                     + " @ " + item.getPrice() + " = " + item.getTotalCost()));
         }
 
-        totalLabel.setText(bundle.getString("label.total.cost") + " " + cart.calculateTotalCost());
+        double total = cart.calculateTotalCost();
+        totalLabel.setText(strings.get("label.total.cost") + " " + total);
+
+        cartService.saveCart(cart.getItems(), total, currentLanguage);
     }
 
     public static void main(String[] args) {

@@ -71,7 +71,7 @@ public class ShoppingCartApp extends Application {
 
         root.getChildren().addAll(langBox, numRow, itemsBox, calculateButton, resultsBox, totalLabel);
 
-        stage.setTitle("Shopping Cart");
+        stage.setTitle("Jesper Holmstrom - Shopping Cart");
         stage.setScene(new Scene(root, 500, 450));
         stage.show();
     }
